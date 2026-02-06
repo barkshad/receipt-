@@ -1,0 +1,7 @@
+{
+  "name": "Q-Beam Receipt Pro",
+  "description": "High-performance sports goods receipt generator with P2P sharing, smart suggestions, and glassmorphic design.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
