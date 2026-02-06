@@ -16,6 +16,7 @@ export interface ReceiptData {
   items: ReceiptItem[];
   taxRate: number;
   currency: string;
+  amountPaid: number;
 }
 
 export interface HistoryItem {

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Plus, Sparkles } from 'lucide-react';
+import { Trash2, Plus, Sparkles, Banknote } from 'lucide-react';
 import { ReceiptData, ReceiptItem } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -37,7 +37,7 @@ const ReceiptForm: React.FC<Props> = ({ data, onChange }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: "Suggest 3 random popular sports products with realistic prices. Return as JSON array of objects with description and price.",
+        contents: "Suggest 3 random popular sports products with realistic prices in Kenyan Shillings (KSH). Return as JSON array of objects with description and price.",
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -68,13 +68,15 @@ const ReceiptForm: React.FC<Props> = ({ data, onChange }) => {
       });
     } catch (error) {
       console.error("AI Error:", error);
-      alert("Failed to get smart suggestions. Check console.");
     }
   };
 
+  const subtotal = data.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const total = subtotal * (1 + data.taxRate / 100);
+
   return (
     <div className="space-y-6">
-      <div className="glass p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="glass p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <label className="block">
             <span className="text-sm font-medium text-white/60">Customer Name</span>
@@ -82,8 +84,8 @@ const ReceiptForm: React.FC<Props> = ({ data, onChange }) => {
               type="text" 
               value={data.customerName}
               onChange={e => onChange({...data, customerName: e.target.value})}
-              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
-              placeholder="Full Name"
+              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-white"
+              placeholder="e.g. John Doe"
             />
           </label>
           <label className="block">
@@ -92,78 +94,88 @@ const ReceiptForm: React.FC<Props> = ({ data, onChange }) => {
               type="text" 
               value={data.customerPhone}
               onChange={e => onChange({...data, customerPhone: e.target.value})}
-              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
-              placeholder="+1 (555) 000-0000"
+              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-white"
+              placeholder="+254 7XX XXX XXX"
             />
           </label>
         </div>
         <div className="space-y-4">
           <label className="block">
-            <span className="text-sm font-medium text-white/60">Date</span>
+            <span className="text-sm font-medium text-white/60">Date of Sale</span>
             <input 
               type="date" 
               value={data.date}
               onChange={e => onChange({...data, date: e.target.value})}
-              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-white"
             />
           </label>
-          <label className="block">
-            <span className="text-sm font-medium text-white/60">Shop Name</span>
-            <input 
-              type="text" 
-              value={data.shopName}
-              onChange={e => onChange({...data, shopName: e.target.value})}
-              className="mt-1 block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
-            />
-          </label>
+          <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
+             <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-blue-400 font-bold uppercase">Total Due</span>
+                <span className="text-xl font-black text-white">KSH {total.toLocaleString()}</span>
+             </div>
+             <label className="block mt-2">
+                <div className="flex items-center gap-2 mb-1">
+                   <Banknote size={14} className="text-green-400" />
+                   <span className="text-xs font-medium text-white/60 uppercase">Amount Received</span>
+                </div>
+                <input 
+                  type="number" 
+                  value={data.amountPaid}
+                  onChange={e => onChange({...data, amountPaid: parseFloat(e.target.value) || 0})}
+                  className="block w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 focus:border-green-500 outline-none text-white font-mono"
+                  placeholder="Cash Received"
+                />
+             </label>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Items</h3>
+          <h3 className="text-lg font-semibold text-white">Items List</h3>
           <button 
             onClick={handleSmartSuggest}
-            className="text-xs bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-purple-500/30"
+            className="text-xs bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-purple-500/30 font-bold"
           >
-            <Sparkles size={14} /> AI Smart Add
+            <Sparkles size={14} /> AI Suggestions
           </button>
         </div>
         
         <div className="space-y-3">
           {data.items.map((item) => (
-            <div key={item.id} className="glass p-4 rounded-2xl flex flex-wrap md:flex-nowrap gap-4 items-end">
+            <div key={item.id} className="glass p-4 rounded-2xl flex flex-wrap md:flex-nowrap gap-4 items-end border-l-4 border-blue-600">
               <div className="flex-1 min-w-[200px]">
-                <span className="text-[10px] uppercase font-bold text-white/40 mb-1 block">Description</span>
+                <span className="text-[10px] uppercase font-bold text-white/40 mb-1 block tracking-wider">Description</span>
                 <input 
                   type="text" 
                   value={item.description}
                   onChange={e => updateItem(item.id, 'description', e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-500"
-                  placeholder="Nike Pro Shorts"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-500 text-white"
+                  placeholder="Item Name"
                 />
               </div>
-              <div className="w-24">
-                <span className="text-[10px] uppercase font-bold text-white/40 mb-1 block">Qty</span>
+              <div className="w-20">
+                <span className="text-[10px] uppercase font-bold text-white/40 mb-1 block tracking-wider">Qty</span>
                 <input 
                   type="number" 
                   value={item.quantity}
                   onChange={e => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-500 text-center"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-500 text-center text-white"
                 />
               </div>
               <div className="w-32">
-                <span className="text-[10px] uppercase font-bold text-white/40 mb-1 block">Price</span>
+                <span className="text-[10px] uppercase font-bold text-white/40 mb-1 block tracking-wider">KSH / Unit</span>
                 <input 
                   type="number" 
                   value={item.price}
                   onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-500 text-right"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-500 text-right text-white font-mono"
                 />
               </div>
               <button 
                 onClick={() => removeItem(item.id)}
-                className="p-2.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                className="p-2.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors mb-[1px]"
               >
                 <Trash2 size={18} />
               </button>
@@ -173,10 +185,10 @@ const ReceiptForm: React.FC<Props> = ({ data, onChange }) => {
 
         <button 
           onClick={addItem}
-          className="w-full border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 text-white/40 hover:text-blue-400 p-4 rounded-2xl flex items-center justify-center gap-2 transition-all group"
+          className="w-full border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 text-white/40 hover:text-blue-400 p-4 rounded-2xl flex items-center justify-center gap-2 transition-all group font-bold"
         >
-          <Plus size={20} className="group-hover:scale-110 transition-transform" />
-          Add Item
+          <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+          Add Another Product
         </button>
       </div>
     </div>
